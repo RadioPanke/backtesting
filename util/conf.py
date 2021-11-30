@@ -31,7 +31,16 @@ l = ['LB', 'LEVI', 'LKQ', 'LLY', 'LMT']
 m = ['MAT', 'MDT', 'MET', 'MGI', 'MRK']
 n = ['NEE', 'NIO', 'NTES', 'NTRA', 'NWL']
 o = ['O', 'OKE', 'OKTA', 'OMC', 'OMF']
+p = ['PFE', 'PEAK', 'PENN', 'PGR', 'PHG']
+q = []
+r = []
 s = ['SAVE', 'SBUX', 'SCHF', 'SE', 'SSO']
+t = []
+u = []
+v = []
 w = ['WBA', 'WBT', 'WDAY', 'WDC', 'WU']
+x = []
+y = []
+z = []
 
-stocks = a + b + c + d + e + f + g + h + i + j + k + l + m + n + o + s + w
+stocks = a + b + c + d + e + f + g + h + i + j + k + l + m + n + o + p + q + r + s + t + u + v + w + x + y + z

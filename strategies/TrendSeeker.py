@@ -9,6 +9,7 @@ import plotly.graph_objects as go
 
 """
 Buys an uptrend
+(currently using)
 
 //Variations//
 Entry:
