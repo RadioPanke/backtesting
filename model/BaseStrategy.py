@@ -437,6 +437,9 @@ class Stats:
         self.total_transactions = self.sell_trades + self.buy_trades
 
     def to_string(self):
+        """
+        Prints stats to console and to the stats folder
+        """
         print('''
         --- ‼️ Stats ‼️ ---
         ''')
