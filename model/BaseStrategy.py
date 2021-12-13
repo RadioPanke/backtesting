@@ -295,6 +295,9 @@ class BaseStrategy:
         return self.order
 
     def print_stats(self):
+        """
+        Prints stats to console and to the stats folder
+        """
         self.stats.to_string()
         # self.stats.calculate_stats()
 
@@ -316,6 +319,12 @@ class BaseStrategy:
             self.traces_pnl_curve.append(self.cash)
 
     def plot_results(self, pnltrace=True, indicatortrace=False):
+        """
+        Plots chart with trades made
+
+        pnltrace: dots with P/L numbers
+        indicatortrace: up and down arrows where trades were executed
+        """
         candlestick = go.Candlestick(x=self.data.date, open=self.data.open, high=self.data.high,
                                      low=self.data.low, close=self.data.close)
         fig_chart = go.Figure(data=[candlestick])
@@ -336,6 +345,9 @@ class BaseStrategy:
         pass
 
     def plot_pnls(self):
+        """
+        External P/L green/red dot plot
+        """
         fig_pnls = go.Figure(data=self.traces_pnl)
         fig_pnls.layout.xaxis.type = 'category'
         fig_pnls.update_layout(title=f'P/L {type(self).__name__} on {self.ticker}')
@@ -343,6 +355,9 @@ class BaseStrategy:
         fig_pnls.show()
 
     def plot_equity_curve(self):
+        """
+        Extra equity line chart
+        """
         fig_curve = go.Figure()
         fig_curve.update_layout(title=f'Equity curve {type(self).__name__} on {self.ticker}')
         fig_curve.add_trace(go.Scatter(y=self.traces_pnl_curve, line=dict(color='DarkCyan', width=2.2),

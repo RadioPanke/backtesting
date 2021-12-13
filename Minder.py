@@ -94,7 +94,7 @@ def replay(ticker):
     # pnl = strategy.play()
     strategy.play()
     """###PRINT RESULTS###"""
-    strategy.print_stats()
+    # strategy.print_stats()
     strategy.plot_results(pnltrace=True, indicatortrace=True)
     # strategy.plot_pnls()
     # strategy.plot_equity_curve()
