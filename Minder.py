@@ -10,7 +10,7 @@ from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from strategies.TrendSeeker import TrendSeeker
 from strategies.VXXScalper import VXXScalper
-from strategies.TwoDayReversal import TwoDayReversal
+from strategies.NDaysReversal import NDaysReversal
 from model.DataFeeder import DataFeeder
 from model.DataFeeder import Source
 from util.conf import *
@@ -70,7 +70,7 @@ def print_global_stats(stats):
 def replay(ticker):
     start = datetime(2015, 1, 1)
     end = datetime(2021, 1, 1)
-    strategy = TwoDayReversal(start=start, end=end)
+    strategy = NDaysReversal(start=start, end=end)
     # strategy = TrendSeeker(start=start, end=end)
     # strategy = VXXScalper(start=start, end=None)
     # strategy = CrossOver(start=None, end=None)
@@ -95,7 +95,7 @@ def replay(ticker):
     strategy.play()
     """###PRINT RESULTS###"""
     # strategy.print_stats()
-    strategy.plot_results(pnltrace=True, indicatortrace=True)
+    # strategy.plot_results(pnltrace=True, indicatortrace=True)
     # strategy.plot_pnls()
     # strategy.plot_equity_curve()
     return strategy.stats
@@ -106,7 +106,7 @@ def main():
     tickers = stocks + etfs
     # tickers = ['AMZN', 'IBM', 'TSLA', 'ALLY', 'AMAT', 'SPY', 'QQQ']
     # tickers = ['VXX']
-    tickers = etfs20
+    tickers = etfs
     print('Started')
     start = datetime.now()
     with ProcessPoolExecutor(max_workers=4) as executor:

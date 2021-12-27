@@ -8,9 +8,10 @@ from ta.trend import sma_indicator
 """
 
 
-class TwoDayReversal(BaseStrategy):
+class NDaysReversal(BaseStrategy):
     def conf(self):
         self.min_bars = 5
+        self.held = 1
 
     def calculate_indicators(self):
         # Initialize ATR
@@ -30,20 +31,29 @@ class TwoDayReversal(BaseStrategy):
                 self.log(f'️{symbol} Cover {int(order.size)}@{order.execprice:.2f} P/L {self.pnl:.2f}')
 
     def next(self, x: int, bar):
-        # entry condition
-        # trade_condition = self.twoDayRsiUnder10(x, bar)
+        # ENTRY
         trade_condition = self.rsiUnder10(x, bar)
+        # trade_condition = self.rsiUnder10(x, bar)
         if self.order:
-            # it stop is not hit, replace it with new resistance
-            self.send_order(size=self.size, exectype=OrderType.Limit, side=Side.Sell, price=bar.close)
+            # EXIT
+            self.n_days_exit(x, bar, 1)
         elif not self.position and trade_condition:
+            # self.size = round(self.p['risk'] / (bar.atr * .33), 0)
             self.size = round(self.p['risk'] / bar.atr, 0)
-            # % risk
             self.size = self.size if self.size > 0 else 1
             s_price = bar.close - bar.atr
             stop_loss = Order(exectype=OrderType.Stop, size=self.size, side=Side.Sell, price=s_price)
             self.send_order(size=self.size, side=Side.Buy, exectype=OrderType.Limit, price=bar.close,
                             oso=stop_loss)
+
+    def n_days_exit(self, x, bar, n):
+        """
+        :param n: number of holding days to exit
+        """
+        if self.held == n:
+            self.send_order(size=self.size, exectype=OrderType.Limit, side=Side.Sell, price=bar.close)
+        else:
+            self.held += 1
 
     def rsiUnder10(self, x, bar):
         if bar.close > bar.sma:
@@ -53,6 +63,9 @@ class TwoDayReversal(BaseStrategy):
 
     def twoDayRsiUnder10(self, x, bar):
         if bar.close > bar.sma:
-            return True if self.data.rsi[x-1] < 10 and bar.rsi < 10 else False
+            # 2 < 10 RSI readings
+            # return True if self.data.rsi[x-1] < 10 and bar.rsi < 10 else False
+            # red day after < 10 RSI reading
+            return True if self.data.rsi[x - 1] < 10 and self.data.close[x-1] > bar.close else False
         else:
             return False
