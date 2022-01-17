@@ -1,5 +1,8 @@
 # Alpha 5 API requests per minute; 500 API requests per day
-ALPHA_VANTAGE_API_KEY = 'PUUSLILZB63SYK3H'
+# ALPHA_VANTAGE_API_KEY = 'PUUSLILZB63SYK3H'
+# Your new API key (with the 500 requests/day rate limit lifted) is: CE0ZLEU0QGG78VEX
+ALPHA_VANTAGE_API_KEY = 'CE0ZLEU0QGG78VEX'
+
 
 etfs = [
     'AAXJ', 'DIA', 'EWC', 'EWG', 'FXI', 'GLD', 'IJH', 'IJR', 'ILF', 'KWEB', 'QQQ', 'SLV', 'SPY', 'USO', 'VGK',
