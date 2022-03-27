@@ -5,6 +5,13 @@ from ta.momentum import rsi
 from ta.trend import sma_indicator
 
 """
+Long ETFs on SMA200 a low RSI2 and sells after N (1) days
+
+//Variations//
+Entry:
+    - 
+Exit
+    - Trail ATR2 <-- Best  example, to remove
 """
 
 
