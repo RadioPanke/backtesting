@@ -107,6 +107,7 @@ def main():
     # tickers = ['AMZN', 'IBM', 'TSLA', 'ALLY', 'AMAT', 'SPY', 'QQQ']
     # tickers = ['VXX']
     # tickers = etfs20
+    tickers = etfs
     print('Started')
     start = datetime.now()
     with ProcessPoolExecutor(max_workers=4) as executor:

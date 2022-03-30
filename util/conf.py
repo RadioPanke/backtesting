@@ -3,6 +3,8 @@
 # Your new API key (with the 500 requests/day rate limit lifted) is: CE0ZLEU0QGG78VEX
 ALPHA_VANTAGE_API_KEY = 'CE0ZLEU0QGG78VEX'
 
+FINANCIAL_MODELING_PREP_KEY = 'cf16a6dae1cbbfd6d3b761586c77e234'
+
 
 etfs = [
     'AAXJ', 'DIA', 'EWC', 'EWG', 'FXI', 'GLD', 'IJH', 'IJR', 'ILF', 'KWEB', 'QQQ', 'SLV', 'SPY', 'USO', 'VGK',
