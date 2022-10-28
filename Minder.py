@@ -68,11 +68,10 @@ def print_global_stats(stats):
 
 
 def replay(ticker):
-    start = datetime(2015, 1, 1)
-    end = datetime(2021, 1, 1)
-    strategy = NDaysReversal(start=start, end=end)
+    start = datetime(2022, 1, 1)
+    end = datetime(2022, 9, 1)
     # strategy = TrendSeeker(start=start, end=end)
-    # strategy = VXXScalper(start=start, end=None)
+    strategy = VXXScalper(start=start, end=None)
     # strategy = CrossOver(start=None, end=None)
 
     ticker_file = Path(f'data/{ticker}.csv')
@@ -94,10 +93,10 @@ def replay(ticker):
     # pnl = strategy.play()
     strategy.play()
     """###PRINT RESULTS###"""
-    # strategy.print_stats()
-    # strategy.plot_results(pnltrace=True, indicatortrace=True)
-    # strategy.plot_pnls()
-    # strategy.plot_equity_curve()
+    strategy.print_stats()
+    strategy.plot_results(pnltrace=True, indicatortrace=True)
+    strategy.plot_pnls()
+    strategy.plot_equity_curve()
     return strategy.stats
 
 
@@ -105,9 +104,9 @@ def main():
     """Set the stage"""
     tickers = stocks + etfs
     # tickers = ['AMZN', 'IBM', 'TSLA', 'ALLY', 'AMAT', 'SPY', 'QQQ']
-    # tickers = ['VXX']
+    tickers = ['VIXY']
     # tickers = etfs20
-    tickers = etfs
+    # tickers = etfs
     print('Started')
     start = datetime.now()
     with ProcessPoolExecutor(max_workers=4) as executor:
