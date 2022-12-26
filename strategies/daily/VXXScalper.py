@@ -3,7 +3,7 @@ from model.order import OrderType, Order, OrderStatus, Side
 from ta.volatility import average_true_range
 
 """
-(currently using)
+()
 """
 class VXXScalper(BaseStrategy):
     def conf(self):

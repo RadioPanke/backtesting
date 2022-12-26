@@ -322,8 +322,8 @@ class BaseStrategy:
         """
         Plots chart with trades made
 
-        :param pnltrace: dots with P/L numbers
-        :param indicatortrace: up and down arrows where trades were executed
+        :param pnltrace: dots with P/L numbers, up and down arrows where trades were executed
+        :param indicatortrace: plot strategy indicators
         """
         candlestick = go.Candlestick(x=self.data.date, open=self.data.open, high=self.data.high,
                                      low=self.data.low, close=self.data.close)
