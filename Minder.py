@@ -5,12 +5,14 @@ range: loc inclusive iloc exclusive
 """
 __author__ = 'Diego Jimenez Casillas'
 import concurrent, numpy as np, pandas as pd, math
+import enum
 from _datetime import datetime
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from strategies.daily.EndOfMonthRally import EndOfMonthRally
 from model.DataFeeder import DataFeeder
 from model.DataFeeder import Source
+from strategies.intraday.FiveMinsOpen import FiveMinsOpen
 from util.conf import *
 
 
@@ -65,22 +67,38 @@ def print_global_stats(stats):
     print(f'90th win:           {p90th_win:.2f}')
 
 
+def pull_data(time_series, ticker):
+    if time_series is TimeSeries.INTRADAY:
+        time_series_path = 'data/intraday'
+        ticker_file = Path(f'{time_series_path}/{ticker}.csv')
+        if not ticker_file.exists():
+            feeder = DataFeeder(ticker, Source.AlphaVantage)
+            feeder.path = time_series_path
+            feeder.pull_intraday_data()
+    elif time_series is TimeSeries.DAILY:
+        time_series_path = 'data/daily'
+        ticker_file = Path(f'{time_series_path}/{ticker}.csv')
+        if not ticker_file.exists():
+            feeder = DataFeeder(ticker, Source.AlphaVantage)
+            feeder.path = time_series_path
+            feeder.pull_daily_data()
+    elif time_series is TimeSeries.WEEKLY:
+        time_series_path = 'data/weekly'
+        ticker_file = Path(f'{time_series_path}/{ticker}.csv')
+        if not ticker_file.exists():
+            feeder = DataFeeder(ticker, Source.AlphaVantage)
+            feeder.path = time_series_path
+            feeder.pull_weekly_data()
+
+    return pd.read_csv(ticker_file, parse_dates=['date'])
+
+
 def replay(ticker):
-    start = datetime(2015, 1, 1)
-    end = datetime(2022, 9, 1)
-    # strategy = TrendSeeker(start=start, end=end)
-    strategy = EndOfMonthRally(start=start, end=None)
-    # strategy = CrossOver(start=None, end=None)
+    start = datetime(2022, 2, 1)
+    end = datetime(2022, 3, 1)
+    strategy = FiveMinsOpen(start=None, end=None)
 
-    ticker_file = Path(f'data/daily/{ticker}.csv')
-    if not ticker_file.exists():
-        feeder = DataFeeder(ticker, Source.AlphaVantage)
-        feeder.pull_data()
-    else:
-        pass
-        # print(f'{ticker} data already in place')
-
-    data = pd.read_csv(ticker_file, parse_dates=['date'])
+    data = pull_data(TimeSeries.INTRADAY, ticker)
 
     if strategy.feed(data, ticker) is None:
         return None
@@ -92,7 +110,7 @@ def replay(ticker):
     strategy.play()
     """###PRINT RESULTS###"""
     # strategy.print_stats()
-    # strategy.plot_results(pnltrace=True, indicatortrace=True)
+    strategy.plot_results(pnltrace=True, indicatortrace=False)
     # strategy.plot_pnls()
     # strategy.plot_equity_curve()
     return strategy.stats
@@ -102,9 +120,9 @@ def main():
     """Set the stage"""
     # tickers = stocks + etfs
     # tickers = ['AMZN', 'IBM', 'TSLA', 'ALLY', 'AMAT', 'SPY', 'QQQ']
-    # tickers = ['SPY']
-    tickers = etfs20
-    tickers = etfs
+    tickers = ['SPY']
+    # tickers = etfs20
+    # tickers = etfs
     print('Started')
     start = datetime.now()
     with ProcessPoolExecutor(max_workers=4) as executor:
@@ -116,3 +134,11 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+class TimeSeries(enum.Enum):
+    DAILY = 1
+    WEEKLY = 2
+    INTRADAY = 3
+
+# TODO get weekly strat for crossover with MAs
