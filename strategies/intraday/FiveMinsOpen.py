@@ -7,7 +7,7 @@ from ta.trend import sma_indicator
 import plotly.graph_objects as go
 
 """
-TODO
+TODO PROFITABLE so far, need to test more markets dates
 
 //Variations//
 Entry:
@@ -17,10 +17,10 @@ Exit
 """
 
 
-# TODO this whole thing is not done
 class FiveMinsOpen(BaseStrategy):
     def conf(self):
         self.marketOpenTime = pd.Timestamp(2022, 1, 1, 9, 35, 0).time()
+        self.marketCloseTime = pd.Timestamp(2022, 1, 1, 15, 55, 0).time()
         self.marketOpen = None
         self.openBar = None
 
@@ -28,6 +28,8 @@ class FiveMinsOpen(BaseStrategy):
         self.data['marketOpen'] = self.data.date.dt.time == self.marketOpenTime
 
     def notify_order(self, order: Order):
+        if order.status == OrderStatus.Executed:
+            self.marketOpen = False
         return
         if order.status == OrderStatus.Executed:
             if order.side == Side.Sell:
@@ -47,32 +49,16 @@ class FiveMinsOpen(BaseStrategy):
             low = min(self.data.low[x - 2], self.data.low[x - 1], bar.low)
             if self.openBar.low == low:
                 high = max(self.data.high[x - 2], self.data.high[x - 1], bar.high)
-                self.size = round(self.p['risk'] / (high - low), 0)
-                s_price = low - .01
+                self.size = round(self.p['risk'] / (bar.close - low), 0)
+                s_price = low - .02
                 self.size = self.size if self.size > 0 else 1
                 stop_loss = Order(exectype=OrderType.Stop, size=self.size, side=Side.Sell, price=s_price)
                 entry_price = bar.close
                 self.send_order(size=self.size, side=Side.Buy, exectype=OrderType.Limit, price=entry_price,
                                 oso=stop_loss)
-        if self.position:
-            self.marketOpen = False
-
-    def exit_atr(self, bar, atrs):
-        """
-        exit when price is N ATRs above the entry
-        """
-        return abs(bar.close - self.position.avgprice) > (bar.atr * atrs)
-
-    def exit_bar_high(self, bar):
-        """
-        exit when price is above the initial 2 down days
-        """
-        return bar.close > self.bar_high
-
-    def exit_by_risk(self, bar, risk_multiplier):
-        """
-        exit when P/L is higher than the risk multiplier
-        """
-        return ((bar.high - self.position.avgprice) * self.size) >= (self.p['risk'] * risk_multiplier)
-
-
+        elif self.position:
+            # close after 2 bars
+            # if x == (self.openIndex + 4):
+            # close at risk * 2
+            if self.open_pnl(bar.close) > (self.p['risk'] * 1.5) or (bar.date.time() == self.marketCloseTime):
+                self.send_order(size=self.size, side=Side.Sell, exectype=OrderType.Limit, price=bar.close)

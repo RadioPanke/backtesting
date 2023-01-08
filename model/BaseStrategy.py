@@ -61,7 +61,7 @@ class BaseStrategy:
         pass
 
     def log(self, txt):
-        print(f'{self.bar.date:%Y-%m-%d} --- {txt}')
+        print(f'{self.bar.date:%Y-%m-%d /// %H:%M} --- {txt}')
 
     def feed(self, data: pd.DataFrame, ticker) -> None:
         """
@@ -144,8 +144,7 @@ class BaseStrategy:
                 else:
                     size = self.position.size - self.order.size
                     if size == 0:
-                        self.pnl = (self.order.execprice - self.position.avgprice) \
-                                   * self.position.size * self.position.side.value
+                        self.pnl = self._pnl(self.order.execprice)
                         self.cash = self.cash + self.pnl
                         self.position = None
                     else:
@@ -177,8 +176,7 @@ class BaseStrategy:
             else:
                 size = self.position.size - self.order.size
                 if size == 0:
-                    self.pnl = (self.order.execprice - self.position.avgprice) \
-                               * self.position.size * self.position.side.value
+                    self.pnl = self._pnl(self.order.execprice)
                     self.cash = self.cash + self.pnl
                     self.position = None
                 else:
@@ -214,8 +212,7 @@ class BaseStrategy:
                     else:
                         size = self.position.size - self.order.size
                         if size == 0:
-                            self.pnl = (self.order.execprice - self.position.avgprice) \
-                                       * self.position.size * self.position.side.value
+                            self.pnl = self._pnl(self.order.execprice)
                             self.cash = self.cash + self.pnl
                             self.position = None
                         else:
@@ -249,8 +246,7 @@ class BaseStrategy:
                     else:
                         size = self.position.size - self.order.size
                         if size == 0:
-                            self.pnl = (self.order.execprice - self.position.avgprice) \
-                                       * self.position.size * self.position.side.value
+                            self.pnl = self._pnl(self.order.execprice)
                             self.cash = self.cash + self.pnl
                             self.position = None
                         else:
@@ -293,6 +289,20 @@ class BaseStrategy:
             self.next_price = True
         self._evaluate()
         return self.order
+
+    def open_pnl(self, current_price):
+        return self._pnl(current_price)
+
+    def _pnl(self, price):
+        """
+        :return: Current pnl if there is a position, None if there is no position
+        """
+        if not self.position:
+            self.log('There is no current position (open_pnl)')
+            return None
+        else:
+            return (price - self.position.avgprice) \
+                   * self.position.size * self.position.side.value
 
     def print_stats(self):
         """

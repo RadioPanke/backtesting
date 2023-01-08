@@ -94,9 +94,9 @@ def pull_data(time_series, ticker):
 
 
 def replay(ticker):
-    start = datetime(2022, 2, 1)
-    end = datetime(2022, 3, 1)
-    strategy = FiveMinsOpen(start=None, end=None)
+    start = datetime(2021, 1, 1)
+    end = datetime(2022, 1, 1)
+    strategy = FiveMinsOpen(start=start, end=end)
 
     data = pull_data(TimeSeries.INTRADAY, ticker)
 
@@ -110,7 +110,7 @@ def replay(ticker):
     strategy.play()
     """###PRINT RESULTS###"""
     # strategy.print_stats()
-    strategy.plot_results(pnltrace=True, indicatortrace=False)
+    # strategy.plot_results(pnltrace=True, indicatortrace=False)
     # strategy.plot_pnls()
     # strategy.plot_equity_curve()
     return strategy.stats
@@ -120,7 +120,7 @@ def main():
     """Set the stage"""
     # tickers = stocks + etfs
     # tickers = ['AMZN', 'IBM', 'TSLA', 'ALLY', 'AMAT', 'SPY', 'QQQ']
-    tickers = ['SPY']
+    tickers = ['VNQ']
     # tickers = etfs20
     # tickers = etfs
     print('Started')
