@@ -9,14 +9,28 @@ import enum
 from _datetime import datetime
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
-from strategies.daily.EndOfMonthRally import EndOfMonthRally
+from strategies.PerformaceComparison import PerformanceComparison
+from strategies.Crossover import CrossOver
 from model.DataFeeder import DataFeeder
 from model.DataFeeder import Source
-from strategies.intraday.FiveMinsOpen import FiveMinsOpen
 from util.conf import *
 
 
-def print_global_stats(stats):
+class TimeSeries(enum.Enum):
+    DAILY = 1
+    WEEKLY = 2
+    INTRADAY = 3
+
+
+global_start = datetime(2020, 1, 1)
+global_end = datetime(2023, 1, 1)
+# global_start = None
+# global_end = None
+global_time_series = TimeSeries.WEEKLY
+global_risk = 50
+
+
+def print_global_stats(stats, comparison):
     final_pnl = sum([st.final_pnl for st in stats if not math.isnan(st.final_pnl)])
     expectancy = np.mean([st.expectancy for st in stats])
     wins = sum([len(st.wins) for st in stats])
@@ -47,6 +61,7 @@ def print_global_stats(stats):
         profitability = 0
     print()
     print(f'Final P/L:          {final_pnl:.2f}')
+    print(f'SPY comparison      {comparison.final_pnl:.2f}')
     print(f'Win %:              {win_perc:.2f}')
     print(f'Profitability:      {profitability:.2f}')
     print(f'Mean Expectancy:    {expectancy:.2f}')
@@ -93,24 +108,36 @@ def pull_data(time_series, ticker):
     return pd.read_csv(ticker_file, parse_dates=['date'])
 
 
-def replay(ticker):
-    start = datetime(2021, 1, 1)
-    end = datetime(2022, 1, 1)
-    strategy = FiveMinsOpen(start=start, end=end)
+def run_comparison():
+    """depends in replay method variables"""
+    ticker = 'SPY'
+    strategy = PerformanceComparison(start=global_start, end=global_end)
+    data = pull_data(global_time_series, ticker)
+    if strategy.feed(data, ticker) is None:
+        return None
+    strategy.ticker = ticker
+    strategy.p['risk'] = global_risk
+    strategy.cash = 10000
+    strategy.play()
+    return strategy.stats
 
-    data = pull_data(TimeSeries.INTRADAY, ticker)
+
+def replay(ticker):
+    strategy = CrossOver(start=global_start, end=global_end)
+
+    data = pull_data(global_time_series, ticker)
 
     if strategy.feed(data, ticker) is None:
         return None
     strategy.ticker = ticker
-    strategy.p['risk'] = 50
+    strategy.p['risk'] = global_risk
     strategy.cash = 10000
 
     # pnl = strategy.play()
     strategy.play()
     """###PRINT RESULTS###"""
     # strategy.print_stats()
-    # strategy.plot_results(pnltrace=True, indicatortrace=False)
+    # strategy.plot_results(pnltrace=True, indicatortrace=True)
     # strategy.plot_pnls()
     # strategy.plot_equity_curve()
     return strategy.stats
@@ -118,27 +145,21 @@ def replay(ticker):
 
 def main():
     """Set the stage"""
-    # tickers = stocks + etfs
+    tickers = etfs + stocks
     # tickers = ['AMZN', 'IBM', 'TSLA', 'ALLY', 'AMAT', 'SPY', 'QQQ']
-    tickers = ['VNQ']
     # tickers = etfs20
-    # tickers = etfs
+    # tickers = ['spy']
+    # tickers = etfs20
     print('Started')
     start = datetime.now()
     with ProcessPoolExecutor(max_workers=4) as executor:
         futures = [executor.submit(replay, t) for t in tickers]
     stats = [fut.result() for fut in concurrent.futures.as_completed(futures) if fut.result() is not None]
-    print_global_stats(stats)
+    comparison_stats = run_comparison()
+    print_global_stats(stats, comparison_stats)
+
     print(f'\nRan for {round((datetime.now() - start).total_seconds(), 0):.0f} seconds')
 
 
 if __name__ == '__main__':
     main()
-
-
-class TimeSeries(enum.Enum):
-    DAILY = 1
-    WEEKLY = 2
-    INTRADAY = 3
-
-# TODO get weekly strat for crossover with MAs

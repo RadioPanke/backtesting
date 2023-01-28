@@ -119,7 +119,7 @@ class DataFeeder:
             if res.status_code != 200:
                 print(f'Bad status code: {res.status_code}\n {res.text}')
                 sys.exit()
-            data = pd.read_csv(StringIO(res.text), parse_dates=['time'])
+            data = pd.read_csv(StringIO(res.text), parse_dates=['timestamp'])
             data = data.rename(columns={'timestamp': 'date'})
         except Exception as ex:
             print(f'There was a problem with the REST call\n {ex}\n response: {res.text}')

@@ -11,7 +11,7 @@ from ta.trend import adx_pos
 import plotly.graph_objects as go
 
 """
-Based on moving averages cross
+Based on moving averages cross 
 
 //Variations//
 Entry:
@@ -26,7 +26,7 @@ Exit:
 """
 
 
-class CrossOver(BaseStrategy):
+class CrossOverLong(BaseStrategy):
     def conf(self):
         self.min_bars = 60
 
@@ -71,19 +71,19 @@ class CrossOver(BaseStrategy):
 
         if not self.position:
             if self.cross == 1 and bar.close > bar.ma200:
-                self.entry_adx(bar, x, 3.5)
-                # self.entry_ma(bar, x)
+                # self.entry_adx(bar, x, 3.5)
+                self.entry_ma(bar, x)
         elif self.position:
             if self.cross == -1:
                 """liquidate"""
                 self.send_order(size=self.size, side=Side.Sell, exectype=OrderType.Limit, price=bar.close)
-            elif bar.close > self.position.avgprice:
-                """trail stop risk multiplier"""
-                pnl = self.size * (bar.close - self.position.avgprice)
-                if pnl > self.p['risk'] * 3:
-                    stop_p = bar.close - (bar.atr * 2)
-                    if stop_p > self.order.price:
-                        self.send_order(size=self.size, side=Side.Sell, exectype=OrderType.Stop, price=stop_p, nextbar=True)
+            # elif bar.close > self.position.avgprice:
+            #     """trail stop risk multiplier"""
+            #     pnl = self.size * (bar.close - self.position.avgprice)
+            #     if pnl > self.p['risk'] * 3:
+            #         stop_p = bar.close - (bar.atr * 2)
+            #         if stop_p > self.order.price:
+            #             self.send_order(size=self.size, side=Side.Sell, exectype=OrderType.Stop, price=stop_p, nextbar=True)
             # elif bar.close > self.position.avgprice:
             #     """trail stop last support"""
             #     low = self.data.loc[x - 35:x].low.min() - .01
