@@ -132,3 +132,4 @@ dmypy.json
 # my folders
 stats/
 data/
+.DS_Store

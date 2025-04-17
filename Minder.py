@@ -11,6 +11,7 @@ from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from strategies.PerformaceComparison import PerformanceComparison
 from strategies.Crossover import CrossOver
+from strategies.HolyGrail import HolyGrail
 from model.DataFeeder import DataFeeder
 from model.DataFeeder import Source
 from util.conf import *
@@ -26,7 +27,7 @@ global_start = datetime(2020, 1, 1)
 global_end = datetime(2023, 1, 1)
 # global_start = None
 # global_end = None
-global_time_series = TimeSeries.WEEKLY
+global_time_series = TimeSeries.DAILY
 global_risk = 50
 
 
@@ -145,8 +146,8 @@ def replay(ticker):
 
 def main():
     """Set the stage"""
-    tickers = etfs + stocks
-    # tickers = ['AMZN', 'IBM', 'TSLA', 'ALLY', 'AMAT', 'SPY', 'QQQ']
+    # tickers = etfs + stocks
+    tickers = ['AMZN', 'IBM', 'TSLA', 'ALLY', 'AMAT', 'SPY', 'QQQ']
     # tickers = etfs20
     # tickers = ['spy']
     # tickers = etfs20
@@ -162,4 +163,5 @@ def main():
 
 
 if __name__ == '__main__':
+    # TODO warn myself of many plots
     main()
