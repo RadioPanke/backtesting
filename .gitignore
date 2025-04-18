@@ -129,7 +129,9 @@ dmypy.json
 .pyre/
 .idea/*
 
-# my folders
+# my stuff
 stats/
 data/
 .DS_Store
+
+# practice.py

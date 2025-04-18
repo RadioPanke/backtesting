@@ -1,9 +1,11 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
 # Alpha 5 API requests per minute; 500 API requests per day
-# ALPHA_VANTAGE_API_KEY = 'PUUSLILZB63SYK3H'
-# Your new API key (with the 500 requests/day rate limit lifted) is: CE0ZLEU0QGG78VEX
-ALPHA_VANTAGE_API_KEY = 'CE0ZLEU0QGG78VEX'
+# 500 requests/day rate limit lifted
+ALPHA_VANTAGE_API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY")
 
-FINANCIAL_MODELING_PREP_KEY = 'cf16a6dae1cbbfd6d3b761586c77e234'
+FINANCIAL_MODELING_PREP_KEY = os.getenv("FINANCIAL_MODELING_PREP_KEY")
 
 """"WEEKLY"""
 

@@ -147,10 +147,11 @@ def replay(ticker):
 def main():
     """Set the stage"""
     # tickers = etfs + stocks
-    tickers = ['AMZN', 'IBM', 'TSLA', 'ALLY', 'AMAT', 'SPY', 'QQQ']
+    tickers = etfs
+    # tickers = stocks
+    # tickers = ['AMZN', 'IBM', 'TSLA', 'ALLY', 'AMAT', 'SPY', 'QQQ']
     # tickers = etfs20
     # tickers = ['spy']
-    # tickers = etfs20
     print('Started')
     start = datetime.now()
     with ProcessPoolExecutor(max_workers=4) as executor:
