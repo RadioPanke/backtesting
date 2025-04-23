@@ -1,5 +1,13 @@
 # backtesting
 
+- pulls data based on weekly/daily/intraday
+- Easy plug and play strategies to test ideas
+- Compares PnL to a buy andhold approach to SPY for the same period
+- Saves outpouts for each ticker or only the aggregate of a particular strategy with all the tickers included
+- It can plot chart with trades and PnL / equity curve trade by trade / point chart to visualize PnL of all trades and find outliers
+- Many stats like profitability, expectancy, win/loss ratio, median win/loss and more
+
+
 Main class is Minder.py
 
 It can save outputs for specific tickers or global, plot trades in the ticker chart etc...

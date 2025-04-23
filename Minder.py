@@ -137,20 +137,20 @@ def replay(ticker):
     # pnl = strategy.play()
     strategy.play()
     """###PRINT RESULTS###"""
-    # strategy.print_stats()
-    # strategy.plot_results(pnltrace=True, indicatortrace=True)
-    # strategy.plot_pnls()
-    # strategy.plot_equity_curve()
+    strategy.print_stats()
+    strategy.plot_results(pnltrace=True, indicatortrace=True)
+    strategy.plot_pnls()
+    strategy.plot_equity_curve()
     return strategy.stats
 
 
 def main():
     """Set the stage"""
     # tickers = etfs + stocks
-    tickers = etfs
+    # tickers = etfs
     # tickers = stocks
     # tickers = ['AMZN', 'IBM', 'TSLA', 'ALLY', 'AMAT', 'SPY', 'QQQ']
-    # tickers = etfs20
+    tickers = etfs20
     # tickers = ['spy']
     print('Started')
     start = datetime.now()
