@@ -30,7 +30,7 @@ class EndOfMonthRally(BaseStrategy):
         self.data['atr'] = average_true_range(high=self.data.high, low=self.data.low, close=self.data.close, window=7)
 
     def plot_indicators(self):
-        return go.Scatter(x=self.data.date, y=self.data.ma200, name='ma200', line=dict(color='gold'))
+        return go.Scatter(x=self.data.index, y=self.data.ma200, name='ma200', line=dict(color='gold'))
 
     def notify_order(self, order: Order):
         # return

@@ -18,7 +18,7 @@ Exit:
 """
 
 
-class CrossOver(BaseStrategy):
+class QullamaggieSMAs(BaseStrategy):
     def conf(self):
         self.min_bars = 30
 

@@ -4,11 +4,11 @@ import time
 import sys
 
 import yfinance as yf
-from util.conf import *
 from io import StringIO
 import requests
 import pandas as pd
 import numpy as np
+from util.conf import *
 
 
 class DataFeeder:
@@ -44,7 +44,7 @@ class DataFeeder:
         params = dict(
             function='TIME_SERIES_DAILY_ADJUSTED',
             symbol=self.ticker,
-            apikey={ALPHA_VANTAGE_API_KEY},
+            apikey=ALPHA_VANTAGE_API_KEY,
             outputsize='full',
             datatype='csv'
         )
@@ -71,39 +71,45 @@ class DataFeeder:
 
     def _pull_intraday_AlphaVantage(self):
         data = None
-        time_slice = 'year{0}month{1}'
-        call_number = 1
-        for year in range(1, 3):
-            for month in range(1, 13):
-                params = dict(
-                    function='TIME_SERIES_INTRADAY_EXTENDED',
-                    symbol=self.ticker,
-                    apikey={ALPHA_VANTAGE_API_KEY},
-                    adjusted='true',
-                    interval='5min',
-                    slice=time_slice.format(year, month),
-                    datatype='csv'
-                )
-                try:
-                    res = requests.get(f'https://www.alphavantage.co/query', params=params)
-                    if res.status_code != 200:
-                        print(f'Bad status code: {res.status_code}\n {res.text}')
-                        sys.exit()
-                    temp = pd.read_csv(StringIO(res.text), parse_dates=['time'])
-                    temp = temp.rename(columns={'time': 'date'})
-                except:
-                    print(f'There was a problem with the REST call {res.text}')
-                if data is None:
-                    data = temp
-                else:
-                    data = data.append(temp, ignore_index=True)
-                call_number += 1
-                if call_number % 5 == 0:
-                    secs = 60
-                    print(f'Sleeping for {secs} seconds')
-                    time.sleep(secs)
-        # data.sort_values(by=['date'], inplace=True, ascending=True)
-        data = data.iloc[::-1]
+        call_number = 0
+        today = pd.to_datetime("today")
+        for i in range(1,4):
+            target_date = today - pd.DateOffset(months=i)
+            month_str = target_date.strftime('%Y-%m')
+            params = dict(
+                function="TIME_SERIES_INTRADAY",
+                extended_hours="false",
+                symbol=self.ticker,
+                apikey=ALPHA_VANTAGE_API_KEY,
+                adjusted="true",
+                interval="5min",
+                outputsize="full",
+                month=month_str,
+                datatype="csv"
+            )
+            res = None
+            try:
+                res = requests.get(f'https://www.alphavantage.co/query', params=params)
+                if res.status_code != 200:
+                    print(f'Bad status code: {res.status_code}\n {res.text}')
+                    sys.exit()
+                temp = pd.read_csv(StringIO(res.text), parse_dates=['timestamp'])
+                temp = temp.rename(columns={'timestamp': 'date'})
+            except Exception as e:
+                print(f"ERROR: {e}")
+                print(f'There was a problem with the REST call \n{res.text}')
+            if data is None:
+                data = temp
+            else:
+                data = pd.concat([data, temp], ignore_index=True)
+            time.sleep(1)
+            # call_number += 1
+            # if call_number % 5 == 0:
+            #     secs = 60
+            #     print(f'Sleeping for {secs} seconds')
+            #     time.sleep(secs)
+        data.sort_values(by=['date'], inplace=True, ascending=True)
+        # data = data.iloc[::-1]
         data.reset_index(inplace=True, drop=True)
         data.to_csv(f'{self.path}/{self.ticker}.csv', index=None)
 
@@ -111,7 +117,7 @@ class DataFeeder:
         params = dict(
             function='TIME_SERIES_WEEKLY_ADJUSTED',
             symbol=self.ticker,
-            apikey={ALPHA_VANTAGE_API_KEY},
+            apikey=ALPHA_VANTAGE_API_KEY,
             datatype='csv'
         )
         try:

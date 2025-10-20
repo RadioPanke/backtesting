@@ -11,7 +11,8 @@ from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from strategies.PerformaceComparison import PerformanceComparison
 from strategies.Crossover import CrossOver
-from strategies.HolyGrail import HolyGrail
+from strategies.QullamaggieSMAs import QullamaggieSMAs
+from model.BaseStrategy import BaseStrategy
 from model.DataFeeder import DataFeeder
 from model.DataFeeder import Source
 from util.conf import *
@@ -23,11 +24,11 @@ class TimeSeries(enum.Enum):
     INTRADAY = 3
 
 
-global_start = datetime(2020, 1, 1)
-global_end = datetime(2023, 1, 1)
-# global_start = None
-# global_end = None
-global_time_series = TimeSeries.DAILY
+# global_start = datetime(2020, 1, 1)
+# global_end = datetime(2023, 1, 1)
+global_start = None
+global_end = None
+global_time_series = TimeSeries.INTRADAY
 global_risk = 50
 
 
@@ -49,10 +50,11 @@ def print_global_stats(stats, comparison):
     for st in stats:
         all_losses = all_losses + st.losses
     avg_win = np.mean(all_wins)
-    avg_loss = np.mean(all_losses)
-    p20th_loss = np.percentile(all_losses, 20)
-    p50th_loss = np.percentile(all_losses, 50)
-    p75th_loss = np.percentile(all_losses, 75)
+    if len(all_losses) > 0:
+        avg_loss = np.mean(all_losses)
+        p20th_loss = np.percentile(all_losses, 20)
+        p50th_loss = np.percentile(all_losses, 50)
+        p75th_loss = np.percentile(all_losses, 75)
     avg_win_loss_ratio = np.mean([st.avg_win_loss_ratio for st in stats])
     max_win = max([st.max_win for st in stats])
     max_loss = min([st.max_loss for st in stats])
@@ -123,9 +125,7 @@ def run_comparison():
     return strategy.stats
 
 
-def replay(ticker):
-    strategy = CrossOver(start=global_start, end=global_end)
-
+def replay(ticker, strategy: BaseStrategy):
     data = pull_data(global_time_series, ticker)
 
     if strategy.feed(data, ticker) is None:
@@ -137,7 +137,7 @@ def replay(ticker):
     # pnl = strategy.play()
     strategy.play()
     """###PRINT RESULTS###"""
-    strategy.print_stats()
+    # strategy.print_stats()
     strategy.plot_results(pnltrace=True, indicatortrace=True)
     strategy.plot_pnls()
     strategy.plot_equity_curve()
@@ -150,12 +150,13 @@ def main():
     # tickers = etfs
     # tickers = stocks
     # tickers = ['AMZN', 'IBM', 'TSLA', 'ALLY', 'AMAT', 'SPY', 'QQQ']
-    tickers = etfs20
-    # tickers = ['spy']
-    print('Started')
+    # tickers = etfs20
+    tickers = ["QQQ"]
+    print("Started")
     start = datetime.now()
+    strategy = QullamaggieSMAs(start=global_start, end=global_end)
     with ProcessPoolExecutor(max_workers=4) as executor:
-        futures = [executor.submit(replay, t) for t in tickers]
+        futures = [executor.submit(replay, t, strategy) for t in tickers]
     stats = [fut.result() for fut in concurrent.futures.as_completed(futures) if fut.result() is not None]
     comparison_stats = run_comparison()
     print_global_stats(stats, comparison_stats)
@@ -163,6 +164,9 @@ def main():
     print(f'\nRan for {round((datetime.now() - start).total_seconds(), 0):.0f} seconds')
 
 
-if __name__ == '__main__':
-    # TODO warn myself of many plots
+if __name__ == "__main__":
+    '''
+    go to tihs string before running or might plot too much
+    """###PRINT RESULTS###"""
+    '''
     main()

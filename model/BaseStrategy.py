@@ -316,16 +316,16 @@ class BaseStrategy:
         symbol = 'star-triangle-up' if side == Side.Buy else 'star-triangle-down'
         text = int(size)
 
-        self.traces.append(dict(x0=self.bar.date, y=(self.data.high[self.index] + 5,), marker_symbol=symbol,
+        self.traces.append(go.Scatter(x=[self.index], y=[self.data.high[self.index] + 5], marker_symbol=symbol,
                                 marker=dict(color=color, size=8.5), hoverinfo="text", mode="markers",
-                                text=text,))
+                                text=[text]))
         if realized:
             pnl_color = 'green' if realized > 0 else 'crimson'
-            self.traces.append(go.Scatter(x0=self.bar.date, y=(self.data.high[self.index] + 10,),
+            self.traces.append(go.Scatter(x=[self.index], y=[self.data.high[self.index] + 10],
                                           marker=dict(color=pnl_color, size=8), hoverinfo="text", mode="markers",
-                                          text=f'{realized:.2f}',))
-            self.traces_pnl.append(go.Scatter(x0=self.bar.date, y=(realized,), marker=dict(color=pnl_color, size=15),
-                                              hoverinfo="text", mode="markers", text=f'{realized:.2f}',))
+                                          text=[f'{realized:.2f}']))
+            self.traces_pnl.append(go.Scatter(x=[self.index], y=[realized], marker=dict(color=pnl_color, size=15),
+                                              hoverinfo="text", mode="markers", text=[f'{realized:.2f}']))
             self.traces_pnl_curve.append(self.cash)
 
     def plot_results(self, pnltrace=True, indicatortrace=False):
@@ -335,12 +335,12 @@ class BaseStrategy:
         :param pnltrace: dots with P/L numbers, up and down arrows where trades were executed
         :param indicatortrace: plot strategy indicators
         """
-        candlestick = go.Candlestick(x=self.data.date, open=self.data.open, high=self.data.high,
+        candlestick = go.Candlestick(x=self.data.index, open=self.data.open, high=self.data.high,
                                      low=self.data.low, close=self.data.close)
         fig_chart = go.Figure(data=[candlestick])
 
         fig_chart.layout.xaxis.rangeslider.visible = False
-        fig_chart.layout.xaxis.type = 'category'
+        fig_chart.layout.xaxis.type = 'category' # This ensures the index is treated as categories
         fig_chart.layout.xaxis.tickformat = '%Y - %m - %d'
         fig_chart.update_layout(title=f'{type(self).__name__} on {self.ticker}')
 
@@ -349,6 +349,11 @@ class BaseStrategy:
         if indicatortrace:
             fig_chart.add_traces(self.plot_indicators())
 
+        # Use the date for the tick labels, but the index for positioning
+        fig_chart.update_xaxes(
+            tickvals=self.data.index,
+            ticktext=self.data.date.dt.strftime('%Y-%m-%d')
+        )
         fig_chart.show()
 
     def plot_indicators(self):

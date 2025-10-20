@@ -33,9 +33,9 @@ class TrendSeeker(BaseStrategy):
         self.data['adxp'] = adx_pos(high=self.data.high, low=self.data.low, close=self.data.close, window=adx_period)
 
     def plot_indicators(self):
-        return go.Scatter(x=self.data.date, y=self.data.ma200, name='ma200', line=dict(color='gold')), \
-               go.Scatter(x=self.data.date, y=self.data.adxn, name='adx_neg'), \
-               go.Scatter(x=self.data.date, y=self.data.adxp, name='adx_pos'),
+        return go.Scatter(x=self.data.index, y=self.data.ma200, name='ma200', line=dict(color='gold')), \
+               go.Scatter(x=self.data.index, y=self.data.adxn, name='adx_neg'), \
+               go.Scatter(x=self.data.index, y=self.data.adxp, name='adx_pos'),
 
     def notify_order(self, order: Order):
         return
