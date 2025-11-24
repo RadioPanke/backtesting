@@ -25,10 +25,10 @@ class DataFeeder:
         if self.source is Source.YFinance:
             self._pull_yfinance()
 
-    def pull_intraday_data(self):
-        print(f'Pulling intraday {self.ticker} data from {self.source.name}')
+    def pull_intraday_data(self, timeframe):
+        print(f'Pulling {timeframe} intraday {self.ticker} data from {self.source.name}')
         if self.source is Source.AlphaVantage:
-            self._pull_intraday_AlphaVantage()
+            self._pull_intraday_AlphaVantage(timeframe)
 
     def pull_weekly_data(self):
         print(f'Pulling weekly {self.ticker} data from {self.source.name}')
@@ -69,11 +69,12 @@ class DataFeeder:
         data.sort_values(by=['date'], inplace=True, ascending=True)
         data.to_csv(f'{self.path}/{self.ticker}.csv', index=None)
 
-    def _pull_intraday_AlphaVantage(self):
+    def _pull_intraday_AlphaVantage(self, timeframe):
         data = None
-        call_number = 0
         today = pd.to_datetime("today")
-        for i in range(1,4):
+        if timeframe == "3min":
+            timeframe = "1min"
+        for i in range(1,5):
             target_date = today - pd.DateOffset(months=i)
             month_str = target_date.strftime('%Y-%m')
             params = dict(
@@ -82,7 +83,7 @@ class DataFeeder:
                 symbol=self.ticker,
                 apikey=ALPHA_VANTAGE_API_KEY,
                 adjusted="true",
-                interval="5min",
+                interval=timeframe,
                 outputsize="full",
                 month=month_str,
                 datatype="csv"
@@ -103,15 +104,29 @@ class DataFeeder:
             else:
                 data = pd.concat([data, temp], ignore_index=True)
             time.sleep(1)
-            # call_number += 1
-            # if call_number % 5 == 0:
-            #     secs = 60
-            #     print(f'Sleeping for {secs} seconds')
-            #     time.sleep(secs)
         data.sort_values(by=['date'], inplace=True, ascending=True)
         # data = data.iloc[::-1]
+        if timeframe == "1min":
+            # save for later 3min
+            data1min = data.copy()
         data.reset_index(inplace=True, drop=True)
         data.to_csv(f'{self.path}/{self.ticker}.csv', index=None)
+
+        if timeframe == "1min":
+            print("Transforming to 3 min bars")
+            time_series_path = "data/intraday3min"
+            data1min["date"] = pd.to_datetime(
+                data1min["date"],
+                errors="coerce",
+                utc=False
+            )
+            data1min = data1min.set_index("date")
+            data3min = data1min.resample("3Min").agg(
+                {"open": "first", "high": "max", "low": "min", "close": "last", "volume": "sum"}
+            )
+            data3min = data3min.dropna()
+            data3min = data3min.reset_index()
+            data3min.to_csv(f'{time_series_path}/{self.ticker}.csv', index=False)
 
     def _pull_weekly_AlphaVantage(self):
         params = dict(

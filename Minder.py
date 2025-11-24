@@ -3,7 +3,8 @@ Minder is the backtester
 
 range: loc inclusive iloc exclusive
 """
-__author__ = 'Diego Jimenez Casillas'
+
+__author__ = "Diego Jimenez Casillas"
 import concurrent, numpy as np, pandas as pd, math
 import enum
 from _datetime import datetime
@@ -12,6 +13,9 @@ from pathlib import Path
 from strategies.PerformaceComparison import PerformanceComparison
 from strategies.Crossover import CrossOver
 from strategies.QullamaggieSMAs import QullamaggieSMAs
+from strategies.intraday.LindaScalps import LindaScalps
+from strategies.intraday.YoYo import YoYo
+from strategies.intraday.Doji import Doji
 from model.BaseStrategy import BaseStrategy
 from model.DataFeeder import DataFeeder
 from model.DataFeeder import Source
@@ -21,15 +25,52 @@ from util.conf import *
 class TimeSeries(enum.Enum):
     DAILY = 1
     WEEKLY = 2
-    INTRADAY = 3
+    INTRADAY_1min = 4
+    INTRADAY_3min = 5
+    INTRADAY_5min = 3
 
 
 # global_start = datetime(2020, 1, 1)
 # global_end = datetime(2023, 1, 1)
 global_start = None
 global_end = None
-global_time_series = TimeSeries.INTRADAY
+global_time_series = TimeSeries.INTRADAY_3min
 global_risk = 50
+
+
+def main():
+    """Set the stage"""
+    # tickers = etfs + stocks
+    # tickers = etfs
+    # tickers = stocks
+    # tickers = ["AMZN", "IBM", "TSLA", "ALLY", "AMAT", "SPY", "QQQ"]
+    # tickers = etfs20
+    # tickers = ["SPY", "QQQ", "MSFT"]
+    tickers = ["TSLA", "MSFT", "SPY", "QQQ"]
+    tickers = ["TSLA"]
+    # tickers = ["VNQ", "VPL", "VUG", "XLB", "XLE", "XLF", "XLI", "XLK", "QQQ", "SPY"]
+    print("Started")
+    start = datetime.now()
+    strategy = Doji(start=global_start, end=global_end)
+    plotChart = True
+    plotPnLDots = False
+    plotequityCurve = False
+    with ProcessPoolExecutor(max_workers=4) as executor:
+        futures = [
+            executor.submit(
+                replay, t, strategy, plotChart, plotPnLDots, plotequityCurve
+            )
+            for t in tickers
+        ]
+    stats = [
+        fut.result()
+        for fut in concurrent.futures.as_completed(futures)
+        if fut.result() is not None
+    ]
+    comparison_stats = run_comparison()
+    print_global_stats(stats, comparison_stats)
+
+    print(f"\nRan for {round((datetime.now() - start).total_seconds(), 0):.0f} seconds")
 
 
 def print_global_stats(stats, comparison):
@@ -63,110 +104,102 @@ def print_global_stats(stats, comparison):
     else:
         profitability = 0
     print()
-    print(f'Final P/L:          {final_pnl:.2f}')
-    print(f'SPY comparison      {comparison.final_pnl:.2f}')
-    print(f'Win %:              {win_perc:.2f}')
-    print(f'Profitability:      {profitability:.2f}')
-    print(f'Mean Expectancy:    {expectancy:.2f}')
-    print(f'Trades:             {numberOfTrades}')
-    print(f'Number of wins:     {wins}')
-    print(f'Number of losses:   {losses}')
-    print(f'Max win:            {max_win:.2f}')
-    print(f'Max loss:           {max_loss:.2f}')
-    print(f'Avg win:            {avg_win:.2f}')
-    print(f'Avg loss:           {avg_loss:.2f}')
-    print(f'Avg win/loss ratio: {avg_win_loss_ratio:.2f}')
-    print(f'20th loss:          {p20th_loss:.2f}')
-    print(f'50th loss:          {p50th_loss:.2f}')
-    print(f'75th loss:          {p75th_loss:.2f}')
-    print(f'20th win:           {p20th_win:.2f}')
-    print(f'50th win:           {p50th_win:.2f}')
-    print(f'75th win:           {p75th_win:.2f}')
-    print(f'90th win:           {p90th_win:.2f}')
+    print(f"Final P/L:          {final_pnl:.2f}")
+    print(f"SPY comparison      {comparison.final_pnl:.2f}")
+    print(f"Win %:              {win_perc:.2f}")
+    print(f"Profitability:      {profitability:.2f}")
+    print(f"Mean Expectancy:    {expectancy:.2f}")
+    print(f"Trades:             {numberOfTrades}")
+    print(f"Number of wins:     {wins}")
+    print(f"Number of losses:   {losses}")
+    print(f"Max win:            {max_win:.2f}")
+    print(f"Max loss:           {max_loss:.2f}")
+    print(f"Avg win:            {avg_win:.2f}")
+    print(f"Avg loss:           {avg_loss:.2f}")
+    print(f"Avg win/loss ratio: {avg_win_loss_ratio:.2f}")
+    print(f"20th loss:          {p20th_loss:.2f}")
+    print(f"50th loss:          {p50th_loss:.2f}")
+    print(f"75th loss:          {p75th_loss:.2f}")
+    print(f"20th win:           {p20th_win:.2f}")
+    print(f"50th win:           {p50th_win:.2f}")
+    print(f"75th win:           {p75th_win:.2f}")
+    print(f"90th win:           {p90th_win:.2f}")
 
 
 def pull_data(time_series, ticker):
-    if time_series is TimeSeries.INTRADAY:
-        time_series_path = 'data/intraday'
-        ticker_file = Path(f'{time_series_path}/{ticker}.csv')
+    if time_series is TimeSeries.INTRADAY_5min:
+        time_series_path = "data/intraday5min"
+        ticker_file = Path(f"{time_series_path}/{ticker}.csv")
         if not ticker_file.exists():
             feeder = DataFeeder(ticker, Source.AlphaVantage)
             feeder.path = time_series_path
-            feeder.pull_intraday_data()
+            feeder.pull_intraday_data("5min")
+    elif (
+        time_series is TimeSeries.INTRADAY_1min
+        or time_series is TimeSeries.INTRADAY_3min
+    ):
+        time_series_path = "data/intraday1min"
+        ticker_file = Path(f"{time_series_path}/{ticker}.csv")
+        if not ticker_file.exists():
+            feeder = DataFeeder(ticker, Source.AlphaVantage)
+            feeder.path = time_series_path
+            feeder.pull_intraday_data("1min")
+        if time_series is TimeSeries.INTRADAY_3min:
+            time_series_path = "data/intraday3min"
+            ticker_file = Path(f"{time_series_path}/{ticker}.csv")
     elif time_series is TimeSeries.DAILY:
-        time_series_path = 'data/daily'
-        ticker_file = Path(f'{time_series_path}/{ticker}.csv')
+        time_series_path = "data/daily"
+        ticker_file = Path(f"{time_series_path}/{ticker}.csv")
         if not ticker_file.exists():
             feeder = DataFeeder(ticker, Source.AlphaVantage)
             feeder.path = time_series_path
             feeder.pull_daily_data()
     elif time_series is TimeSeries.WEEKLY:
-        time_series_path = 'data/weekly'
-        ticker_file = Path(f'{time_series_path}/{ticker}.csv')
+        time_series_path = "data/weekly"
+        ticker_file = Path(f"{time_series_path}/{ticker}.csv")
         if not ticker_file.exists():
             feeder = DataFeeder(ticker, Source.AlphaVantage)
             feeder.path = time_series_path
             feeder.pull_weekly_data()
 
-    return pd.read_csv(ticker_file, parse_dates=['date'])
+    return pd.read_csv(ticker_file, parse_dates=["date"])
 
 
 def run_comparison():
     """depends in replay method variables"""
-    ticker = 'SPY'
+    ticker = "SPY"
     strategy = PerformanceComparison(start=global_start, end=global_end)
     data = pull_data(global_time_series, ticker)
     if strategy.feed(data, ticker) is None:
         return None
     strategy.ticker = ticker
-    strategy.p['risk'] = global_risk
+    strategy.p["risk"] = global_risk
     strategy.cash = 10000
     strategy.play()
     return strategy.stats
 
 
-def replay(ticker, strategy: BaseStrategy):
+def replay(ticker, strategy: BaseStrategy, plotChart, plotPnLDots, plotequityCurve):
     data = pull_data(global_time_series, ticker)
 
     if strategy.feed(data, ticker) is None:
         return None
     strategy.ticker = ticker
-    strategy.p['risk'] = global_risk
+    strategy.p["risk"] = global_risk
     strategy.cash = 10000
 
     # pnl = strategy.play()
     strategy.play()
     """###PRINT RESULTS###"""
-    # strategy.print_stats()
-    strategy.plot_results(pnltrace=True, indicatortrace=True)
-    strategy.plot_pnls()
-    strategy.plot_equity_curve()
+    strategy.print_stats()
+    if plotChart:
+        strategy.plot_results(pnltrace=True, indicatortrace=True)
+    if plotPnLDots:
+        strategy.plot_pnls()
+    if plotequityCurve:
+        strategy.plot_equity_curve()
     return strategy.stats
 
 
-def main():
-    """Set the stage"""
-    # tickers = etfs + stocks
-    # tickers = etfs
-    # tickers = stocks
-    # tickers = ['AMZN', 'IBM', 'TSLA', 'ALLY', 'AMAT', 'SPY', 'QQQ']
-    # tickers = etfs20
-    tickers = ["QQQ"]
-    print("Started")
-    start = datetime.now()
-    strategy = QullamaggieSMAs(start=global_start, end=global_end)
-    with ProcessPoolExecutor(max_workers=4) as executor:
-        futures = [executor.submit(replay, t, strategy) for t in tickers]
-    stats = [fut.result() for fut in concurrent.futures.as_completed(futures) if fut.result() is not None]
-    comparison_stats = run_comparison()
-    print_global_stats(stats, comparison_stats)
-
-    print(f'\nRan for {round((datetime.now() - start).total_seconds(), 0):.0f} seconds')
-
-
 if __name__ == "__main__":
-    '''
-    go to tihs string before running or might plot too much
-    """###PRINT RESULTS###"""
-    '''
     main()

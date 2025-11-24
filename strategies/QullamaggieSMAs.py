@@ -3,33 +3,83 @@ import pandas as pd
 from model.BaseStrategy import BaseStrategy
 from model.order import OrderType, Order, OrderStatus, Side
 from ta.volatility import average_true_range
-from ta.trend import ema_indicator
+from ta.trend import sma_indicator
 import plotly.graph_objects as go
 
 """
-Based on moving averages cross 
+Not fully implemented, just testing out the code
+
+10/20/50 SMA from Qullamaggie
+
+Nope:
+Entry
+- fast > slow
+- bar.atr > bar.atr_sma12 * 1.1
+Exit
+- close < slow
 
 //Variations//
 Entry:
-    - with moving avg 200 days for entries
-    - no ma 200, only fast and slow
+    - close > slow
+    - close > previous 2 highs
 Exit:
-    - 
+    - End of day
+    - fast cross slow
+Results:
+- Final P/L:          1544.96
+- Profitability:      1.10
+- Win %:              50.40
+- Trades:             625
+// - - - - - //
+Entry:
+    - close > slow
+    - close > previous 2 highs
+    - no trade after 3pm NY
+Exit:
+    - End of day
+    - fast cross slow
+Results:
+- Final P/L:          615.45
+- Win %:              48.88
+- Profitability:      1.05
+- Trades:             536
+// - - - - - //
+Entry:
+    - close > slow
+    - close > previous 2 highs
+    - Trades after 11:00 NY
+Exit:
+    - End of day
+    - fast cross slow
+Results:
+- Final P/L:          1544.39
+- Win %:              49.23
+- Profitability:      1.13
+- Trades:             522
+// - - - - - //
+Entry:
+    - fast > slow
+    - close > previous 2 highs
+    - Trades after 11:00 NY
+Exit:
+    - End of day
+    - fast cross slow
+Results:
+
+// - - - - - //
 """
 
 
 class QullamaggieSMAs(BaseStrategy):
     def conf(self):
-        self.min_bars = 30
+        self.min_bars = 20
 
     def calculate_indicators(self):
-        # 10 is 2 weeks
-        # self.data['fast'] = ema_indicator(self.data.close, 2)
-        self.data['fast'] = ema_indicator(self.data.close, 10)
-        # 30 is 6 weeks
-        # self.data['slow'] = ema_indicator(self.data.close, 6)
-        self.data['slow'] = ema_indicator(self.data.close, 30)
+        self.data['fast'] = sma_indicator(self.data.close, 10)
+        self.data['slow'] = sma_indicator(self.data.close, 20)
         self.data['atr'] = average_true_range(high=self.data.high, low=self.data.low, close=self.data.close, window=5)
+        # shift(1) to avoid lookahead
+        self.data['atr_sma12'] = self.data.atr.rolling(12).mean().shift(1)
 
     def plot_indicators(self):
         return go.Scatter(x=self.data.index, y=self.data.fast, name='fast', line=dict(color='red')), \
@@ -51,39 +101,64 @@ class QullamaggieSMAs(BaseStrategy):
 
         if not self.position:
             """ENTRY"""
-            if self.cross == 1:
+            # account for volume?
+            
+            # if bar.close > bar.slow and bar.close > self.data.high[x - 1] and bar.close > self.data.high[x - 2] and bar.fast > bar.slow:
+            isBefore15hrs = bar.date.time() < pd.Timestamp("15:00").time()
+            isAfter11hrs = bar.date.time() >= pd.Timestamp("11:00").time()
+            isCloseHTSlow = bar.close > bar.slow
+            isFastHTSlow = bar.fast > bar.slow
+            isAtrLTAtrSMA = bar.atr < bar.atr_sma12 
+            isRangeHTAtr = bar.high - bar.low > bar.atr * .8
+            if isCloseHTSlow and bar.close > self.data.high[x - 1] and bar.close > self.data.high[x - 2] and isAfter11hrs and isAtrLTAtrSMA:
                 self.set_size_long(bar)
                 self.send_long(bar)
-            elif self.cross == -1:
-                self.set_size_short(bar)
-                self.send_short(bar)
+            # if self.cross == 1:
+            #     self.set_size_long(bar)
+            #     self.send_long(bar)
+            # elif self.cross == -1:
+            #     self.set_size_short(bar)
+            #     self.send_short(bar)
         elif self.position:
             """EXIT"""
-            if self.cross == -1 and self.position.side == Side.Buy:
+            isEndOfDay = bar.date.time() == pd.Timestamp(year=2025, month=6, day=3, hour=15, minute=55).time()
+            ifCross = self.cross == -1
+            ifCloseLessThanSlow = bar.close < bar.slow
+            if (ifCross and self.position.side == Side.Buy) or isEndOfDay:
                 """liquidate"""
                 self.send_order(size=self.size, side=Side.Sell, exectype=OrderType.Limit, price=bar.close)
-                # flat and go short
-                self.set_size_short(bar)
-                self.send_short(bar)
-            elif self.cross == 1 and self.position.side == Side.Sell:
-                """liquidate"""
-                self.send_order(size=self.size, side=Side.Buy, exectype=OrderType.Limit, price=bar.close)
-                # flat and go long
-                self.set_size_long(bar)
-                self.send_long(bar)
+            # elif self.cross == 1 and self.position.side == Side.Sell:
+            #     """liquidate"""
+            #     self.send_order(size=self.size, side=Side.Buy, exectype=OrderType.Limit, price=bar.close)
+            #     # flat and go long
+            #     self.set_size_long(bar)
+            #     self.send_long(bar)
 
     def ma_cross(self, x, bar):
+        # if bar.date.time() == pd.Timestamp(year=2025, month=6, day=3, hour=14, minute=0).time():
+        #     pass  # Debug breakpoint
+        #     a = self.data.fast[x - 1]
+        #     b = self.data.slow[x - 1]
+        #     c = bar.fast
+        #     d = bar.slow
+        #     e = bar.open
+        #     f = bar.high
+        #     g = bar.low
+        #     h = bar.close
         if self.data.fast[x - 1] > self.data.slow[x - 1] and bar.fast < bar.slow:
+            # short
             self.cross = -1
         elif self.data.fast[x - 1] < self.data.slow[x - 1] and bar.fast > bar.slow:
+            # long
             self.cross = 1
         else:
             self.cross = 0
 
     def send_long(self, bar):
         stop_price = bar.low - bar.atr
-        stop_loss = Order(exectype=OrderType.Stop, size=self.size, side=Side.Sell, price=stop_price)   
-        self.send_order(size=self.size, side=Side.Buy, exectype=OrderType.Limit, price=bar.close, oso=stop_loss)
+        # stop_loss = Order(exectype=OrderType.Stop, size=self.size, side=Side.Sell, price=stop_price)   
+        # self.send_order(size=self.size, side=Side.Buy, exectype=OrderType.Limit, price=bar.close, oso=stop_loss)
+        self.send_order(size=self.size, side=Side.Buy, exectype=OrderType.Limit, price=bar.close)
 
     def send_short(self, bar):
         stop_price = bar.high + bar.atr

@@ -5,7 +5,7 @@ import pandas as pd
 import sys
 import numpy as np
 
-from model.order import OrderType, Order, OrderStatus, Side, TimeInForce
+from model.order import OrderType, Order, OrderStatus, Side, TimeInForce, Position
 
 # remove pandas warnings
 pd.options.mode.chained_assignment = None
@@ -271,7 +271,7 @@ class BaseStrategy:
             elif cash < self.stats.max_drawdown:
                 self.stats.max_drawdown = cash
 
-    def send_order(self, exectype=OrderType.Market, size=1, side=Side.Buy, price=None, tif=TimeInForce.GTC,  oso=None, nextbar=False):
+    def send_order(self, exectype=OrderType.Market, size=1, side=Side.Buy, price=None, tif=TimeInForce.GTC, oso=None, nextbar=False):
         """
         Long / short
         :param side: buy / sell
@@ -336,12 +336,15 @@ class BaseStrategy:
         :param indicatortrace: plot strategy indicators
         """
         candlestick = go.Candlestick(x=self.data.index, open=self.data.open, high=self.data.high,
-                                     low=self.data.low, close=self.data.close)
+                                     low=self.data.low, close=self.data.close,
+                                    #  customdata=self.data['volume'],
+                                     hovertext=self.data.volume)
+
         fig_chart = go.Figure(data=[candlestick])
 
         fig_chart.layout.xaxis.rangeslider.visible = False
         fig_chart.layout.xaxis.type = 'category' # This ensures the index is treated as categories
-        fig_chart.layout.xaxis.tickformat = '%Y - %m - %d'
+        fig_chart.layout.xaxis.tickformat = '%Y-%m-%d %H:%M'
         fig_chart.update_layout(title=f'{type(self).__name__} on {self.ticker}')
 
         if pnltrace:
@@ -352,7 +355,7 @@ class BaseStrategy:
         # Use the date for the tick labels, but the index for positioning
         fig_chart.update_xaxes(
             tickvals=self.data.index,
-            ticktext=self.data.date.dt.strftime('%Y-%m-%d')
+            ticktext=self.data.date.dt.strftime('%Y-%m-%d %H:%M')
         )
         fig_chart.show()
 
@@ -378,14 +381,6 @@ class BaseStrategy:
         fig_curve.add_trace(go.Scatter(y=self.traces_pnl_curve, line=dict(color='DarkCyan', width=2.2),
                                        mode='lines+markers'))
         fig_curve.show()
-
-
-class Position:
-    def __init__(self, size, avgprice, side):
-        self.size = size
-        self.avgprice = avgprice
-        self.side = side
-
 
 class Stats:
     def __init__(self, strategy, ticker, cash, data):

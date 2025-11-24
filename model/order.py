@@ -24,7 +24,7 @@ class TimeInForce(enum.Enum):
 
 
 class Order:
-    def __init__(self, exectype=OrderType.Market, size=1, tif=0, side=Side.Buy, price=None, status=OrderStatus.Pending,
+    def __init__(self, exectype=OrderType.Market, size=1, tif=TimeInForce.Day, side=Side.Buy, price=None, status=OrderStatus.Pending,
                  oso=None, nextbar=False):
         """
         :param nextbar: True = skip current bar
@@ -38,3 +38,10 @@ class Order:
         self.nextbar = nextbar
         self.execprice = None
         self.price = price
+
+
+class Position:
+    def __init__(self, size, avgprice, side):
+        self.size = size
+        self.avgprice = avgprice
+        self.side = side
